@@ -8,7 +8,7 @@ levels(as.factor(IN_Data$precinct))
 levels(as.factor(IN_Data$district))
 levels(as.factor(IN_Data$jurisdiction))
 
-nlevels(as.factor(IN_Data$precinct))/nlevels(as.factor(IN_Data$jurisdiction))
+nlevels(as.factor(IN_Data$precinct))/nlevels(as.factor(IN_Data$district))
 
 IN_Mini=select(IN_Data, precinct, party, votes)
 
@@ -37,19 +37,41 @@ IN_Data_Lib_Sum=IN_Data_Lib %>%
   summarise(votes_lib_sum = sum(votes_lib))
 
 IN_Data_Col=IN_Data %>% select(year, stage, special, state, state_postal, state_fips, state_icpsr, 
-       county_name, county_fips, county_ansi, county_lat, county_long, jurisdiction, district, precinct) %>%
-       distinct()
-  
-
+    county_name, county_fips, county_ansi, county_lat, county_long, jurisdiction, district, precinct) %>%
+    distinct() 
+    
+    
 IN_Data_RD1=left_join(IN_Data_Col,IN_Data_Rep_Sum,by = c("precinct"))
 IN_Data_RD2=left_join(IN_Data_RD1,IN_Data_Dem_Sum,by = c("precinct"))
 
-IN_Master=left_join(IN_Data_RD2,IN_Data,by = c("precinct"))
-
-
-
-dim(IN_Master)
+dim(IN_Data_Col)
 dim(IN_Data_Precinct_Master)
 dim(IN_Data_RD1)
 dim(IN_Data_RD2)
 dim(IN_Data_Rep_Sum)
+
+
+IN_Data_Final_Fix=IN_Data_RD2 %>%
+      filter(precinct!="KOSCIUSKO") %>%
+      filter(!is.na(district)) %>%
+      replace(is.na(.), 0) 
+
+dim(IN_Data_RD2)-dim(IN_Data_Final_Fix)
+
+boxplot(IN_Data_Final_Fix$votes_dem_sum-IN_Data_Final_Fix$votes_rep_sum~IN_Data_Final_Fix$district)
+abline(h=0)
+
+boxplot(IN_Data_Final_Fix$votes_dem_sum-IN_Data_Final_Fix$votes_rep_sum~IN_Data_Final_Fix$jurisdiction)
+abline(h=0)
+
+boxplot(IN_Data_Final_Fix$votes_dem_sum-IN_Data_Final_Fix$votes_rep_sum~IN_Data_Final_Fix$precinct)
+abline(h=0)
+
+IN_Data_Final_Fix %>%
+    group_by(district) %>%
+    summarise(votes_tot = sum(votes_dem_sum-votes_rep_sum))
+
+
+
+
+
